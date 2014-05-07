@@ -58,5 +58,24 @@ def get_record(file_path=FILE_NAME):
         for line in csv.reader(csvfile):
             yield Record(line)
 
+
+def get_result_dict():
+    result = {}
+    for rec in get_record():
+        try:
+            result[rec.subject]
+        except KeyError:
+            result[rec.subject] = {"true":
+                                   {"MSA": [],
+                                    "MFD": []},
+                                   "false":
+                                   {"MSA": [],
+                                    "MFD": []}}
+        finally:
+            result[rec.subject][rec.known]["MSA"].append(rec.MSA)
+            result[rec.subject][rec.known]["MFD"].append(rec.MFD)
+    return result
+
+
 if __name__ == "__main__":
     get_record()
