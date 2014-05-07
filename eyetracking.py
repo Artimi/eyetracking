@@ -8,6 +8,8 @@ import scipy.cluster.vq as spvq
 import itertools
 
 FILE_NAME = 's1-s6_sorted.csv'
+DELTA_T = 1.0
+LEN_FIXATIONS_THRESHOLD = 10
 
 
 class Record(object):
@@ -19,11 +21,13 @@ class Record(object):
         self.position = np.reshape(self.position, (2, len(self.position) / 2), order='F')
         self.velocity = self.compute_velocity(self.position)
         self.peaks = self.get_peaks(self.velocity)
+        self.len_fixations = self.get_len_fixations(self.peaks)
 
     def compute_velocity(self, position):
         velocity = np.zeros([position.shape[1]], dtype=float)
         for i in range(1, position.shape[1]):
-            velocity[i] = np.sqrt((position[0, i] - position[0, i - 1]) ** 2 + (position[1, i] - position[1, i - 1]) ** 2)
+            velocity[i] = np.sqrt((position[0, i] - position[0, i - 1]) ** 2
+                                  + (position[1, i] - position[1, i - 1]) ** 2) / DELTA_T
         return velocity
 
     def get_peaks(self, velocity):
@@ -33,17 +37,20 @@ class Record(object):
             labels = np.logical_not(labels)
         return labels
 
+    def get_len_fixations(self, peaks):
+        len_fixations = np.array([])
+        for bit, group in itertools.groupby(peaks):
+            if not bit:
+                len_fixations = np.append(len_fixations, sum(1 for _ in group) / DELTA_T)
+        return len_fixations
+
+    @property
     def MSA(self):
         return np.average(self.velocity[self.peaks])
 
+    @property
     def MFD(self):
-        accumulator = 0
-        fixations = 0
-        for bit, group in itertools.groupby(self.peaks):
-            if not bit:
-                fixations += 1
-                accumulator += sum(1 for _ in group)
-        return accumulator / fixations
+        return np.average(self.len_fixations[self.len_fixations > LEN_FIXATIONS_THRESHOLD])
 
 
 def get_record(file_path=FILE_NAME):
