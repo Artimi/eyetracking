@@ -6,7 +6,6 @@ import numpy as np
 import scipy.cluster.vq as spvq
 
 FILE_NAME = 's1-s6_sorted.csv'
-THRESHOLD = 8.0
 
 
 class Record(object):
@@ -17,6 +16,7 @@ class Record(object):
         self.position = np.array(map(float, line[2:]))
         self.position = np.reshape(self.position, (2, len(self.position) / 2), order='F')
         self.velocity = self.compute_velocity(self.position)
+        self.peaks = self.get_peaks(self.velocity)
 
     def compute_velocity(self, position):
         velocity = np.zeros([position.shape[1]], dtype=float)
@@ -26,10 +26,13 @@ class Record(object):
 
     def get_peaks(self, velocity):
         clusters, labels = spvq.kmeans2(velocity, 2)
-        labels = np.astype(bool)
+        labels = labels.astype(bool)
         if clusters[0] > clusters[1]:
             labels = np.logical_not(labels)
         return labels
+
+    def MSA(self):
+        return np.average(self.velocity[self.peaks])
 
 
 def get_record(file_path=FILE_NAME):
