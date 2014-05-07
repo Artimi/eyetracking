@@ -1,9 +1,11 @@
 #!/usr/bin/env python2.7
 # -*- encoding: utf-8 -*-
 
+from __future__ import division
 import csv
 import numpy as np
 import scipy.cluster.vq as spvq
+import itertools
 
 FILE_NAME = 's1-s6_sorted.csv'
 
@@ -33,6 +35,15 @@ class Record(object):
 
     def MSA(self):
         return np.average(self.velocity[self.peaks])
+
+    def MFD(self):
+        accumulator = 0
+        fixations = 0
+        for bit, group in itertools.groupby(self.peaks):
+            if not bit:
+                fixations += 1
+                accumulator += sum(1 for _ in group)
+        return accumulator / fixations
 
 
 def get_record(file_path=FILE_NAME):
