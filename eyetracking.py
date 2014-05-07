@@ -6,10 +6,14 @@ import csv
 import numpy as np
 import scipy.cluster.vq as spvq
 import itertools
+from collections import namedtuple
 
 FILE_NAME = 's1-s6_sorted.csv'
 DELTA_T = 1.0
 LEN_FIXATIONS_THRESHOLD = 10
+
+SubjectResult = namedtuple("SubjectResult", ["MFD_true", "MFD_SD_true", "MFD_false", "MFD_SD_false",
+                           "MSA_true", "MSA_SD_true", "MSA_false", "MSA_SD_false"])
 
 
 class Record(object):
@@ -75,6 +79,21 @@ def get_result_dict():
             result[rec.subject][rec.known]["MSA"] = np.append(result[rec.subject][rec.known]["MSA"], rec.MSA)
             result[rec.subject][rec.known]["MFD"] = np.append(result[rec.subject][rec.known]["MFD"], rec.MFD)
     return result
+
+
+def process_result(res):
+    subject_results = []
+    for subject in res:
+        subject_results.append(SubjectResult(
+            np.average(res[subject]["true"]["MFD"]),
+            np.std(res[subject]["true"]["MFD"]),
+            np.average(res[subject]["false"]["MFD"]),
+            np.std(res[subject]["false"]["MFD"]),
+            np.average(res[subject]["true"]["MSA"]),
+            np.std(res[subject]["true"]["MSA"]),
+            np.average(res[subject]["false"]["MSA"]),
+            np.std(res[subject]["false"]["MSA"])))
+    return subject_results
 
 
 if __name__ == "__main__":
