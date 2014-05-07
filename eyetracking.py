@@ -66,14 +66,14 @@ def get_result_dict():
             result[rec.subject]
         except KeyError:
             result[rec.subject] = {"true":
-                                   {"MSA": [],
-                                    "MFD": []},
+                                   {"MSA": np.array([]),
+                                    "MFD": np.array([])},
                                    "false":
-                                   {"MSA": [],
-                                    "MFD": []}}
+                                   {"MSA": np.array([]),
+                                    "MFD": np.array([])}}
         finally:
-            result[rec.subject][rec.known]["MSA"].append(rec.MSA)
-            result[rec.subject][rec.known]["MFD"].append(rec.MFD)
+            result[rec.subject][rec.known]["MSA"] = np.append(result[rec.subject][rec.known]["MSA"], rec.MSA)
+            result[rec.subject][rec.known]["MFD"] = np.append(result[rec.subject][rec.known]["MFD"], rec.MFD)
     return result
 
 
