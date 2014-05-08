@@ -4,7 +4,7 @@
 from __future__ import division
 import csv
 import numpy as np
-import scipy.cluster.vq as spvq
+import sklearn.cluster
 import itertools
 from collections import namedtuple
 
@@ -25,9 +25,6 @@ class Record(object):
         self.position = np.reshape(self.position, (2, len(self.position) / 2), order='F')
         self.velocity = self.compute_velocity(self.position)
         self.peaks = self.get_peaks(self.velocity)
-        #if np.all(self.peaks):
-            #import ipdb; ipdb.set_trace()
-            #self.get_peaks(self.velocity)
         self.len_fixations = self.get_len_fixations(self.peaks)
         self.MFD = self.get_MFD()
         self.MSA = self.get_MSA()
@@ -40,9 +37,12 @@ class Record(object):
         return velocity
 
     def get_peaks(self, velocity):
-        clusters, labels = spvq.kmeans2(velocity, 2)
+        k_means = sklearn.cluster.KMeans(n_clusters=2)
+        k_means.fit(np.expand_dims(velocity, 1))
+        labels = k_means.labels_
+        clusters = k_means.cluster_centers_
         labels = labels.astype(bool)
-        if clusters[0] > clusters[1]:
+        if clusters[0, 0] > clusters[1, 0]:
             labels = np.logical_not(labels)
         return labels
 
