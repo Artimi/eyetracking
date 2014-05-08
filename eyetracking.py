@@ -12,8 +12,12 @@ FILE_NAME = 's1-s6_sorted.csv'
 DELTA_T = 1.0
 LEN_FIXATIONS_THRESHOLD = 10
 
-SubjectResult = namedtuple("SubjectResult", ["MFD_true", "MFD_SD_true", "MFD_false", "MFD_SD_false",
+SubjectResult = namedtuple("SubjectResult", ['subject', "MFD_true", "MFD_SD_true", "MFD_false", "MFD_SD_false",
                            "MSA_true", "MSA_SD_true", "MSA_false", "MSA_SD_false"])
+OverallResult = namedtuple('OverallResult', ['MFD_overall_true', 'MFD_overall_true_SD',
+                                             'MFD_overall_false', 'MFD_overall_false_SD',
+                                             'MSA_overall_true', 'MSA_overall_true_SD',
+                                             'MSA_overall_false', 'MSA_overall_false_SD'])
 
 
 class Record(object):
@@ -22,7 +26,7 @@ class Record(object):
         self.subject = line[0]
         self.known = line[1]
         self.position = np.array(map(float, line[2:]))
-        self.position = np.reshape(self.position, (2, len(self.position) / 2), order='F')
+        self.position = np.reshape(self.position, (2, len(self.position) // 2), order='F')
         self.velocity = self.compute_velocity(self.position)
         self.peaks = self.get_peaks(self.velocity)
         self.len_fixations = self.get_len_fixations(self.peaks)
@@ -86,8 +90,13 @@ def get_result_dict():
 
 def process_result(res):
     subject_results = []
+    MFD_overall_true = np.array([])
+    MFD_overall_false = np.array([])
+    MSA_overall_true = np.array([])
+    MSA_overall_false = np.array([])
     for subject in res:
         subject_results.append(SubjectResult(
+            subject,
             np.average(res[subject]["true"]["MFD"]),
             np.std(res[subject]["true"]["MFD"]),
             np.average(res[subject]["false"]["MFD"]),
@@ -96,7 +105,25 @@ def process_result(res):
             np.std(res[subject]["true"]["MSA"]),
             np.average(res[subject]["false"]["MSA"]),
             np.std(res[subject]["false"]["MSA"])))
-    return subject_results
+        MFD_overall_true = np.append(MFD_overall_true, res[subject]['true']['MFD'])
+        MFD_overall_false = np.append(MFD_overall_false, res[subject]['false']['MFD'])
+        MSA_overall_true = np.append(MSA_overall_true, res[subject]['true']['MSA'])
+        MSA_overall_false = np.append(MSA_overall_false, res[subject]['false']['MSA'])
+    overall_result = OverallResult(
+        np.average(MFD_overall_true), np.std(MFD_overall_true),
+        np.average(MFD_overall_false), np.std(MFD_overall_false),
+        np.average(MSA_overall_true), np.std(MSA_overall_true),
+        np.average(MSA_overall_false), np.std(MSA_overall_false))
+    return subject_results, overall_result
+
+
+def generate_result_csv(subject_results, overall_result):
+    result = ""
+    for subject_data in subject_results:
+        line = " ".join(map(str, subject_data))
+        line += " " + " ".join(map(str, overall_result))
+        result += line + '\n'
+    return result
 
 
 if __name__ == "__main__":
