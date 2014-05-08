@@ -25,7 +25,12 @@ class Record(object):
         self.position = np.reshape(self.position, (2, len(self.position) / 2), order='F')
         self.velocity = self.compute_velocity(self.position)
         self.peaks = self.get_peaks(self.velocity)
+        #if np.all(self.peaks):
+            #import ipdb; ipdb.set_trace()
+            #self.get_peaks(self.velocity)
         self.len_fixations = self.get_len_fixations(self.peaks)
+        self.MFD = self.get_MFD()
+        self.MSA = self.get_MSA()
 
     def compute_velocity(self, position):
         velocity = np.zeros([position.shape[1]], dtype=float)
@@ -48,12 +53,10 @@ class Record(object):
                 len_fixations = np.append(len_fixations, sum(1 for _ in group) / DELTA_T)
         return len_fixations
 
-    @property
-    def MSA(self):
+    def get_MSA(self):
         return np.average(self.velocity[self.peaks])
 
-    @property
-    def MFD(self):
+    def get_MFD(self):
         return np.average(self.len_fixations[self.len_fixations > LEN_FIXATIONS_THRESHOLD])
 
 
@@ -97,4 +100,4 @@ def process_result(res):
 
 
 if __name__ == "__main__":
-    get_record()
+    get_result_dict()
