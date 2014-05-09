@@ -9,8 +9,8 @@ import itertools
 from collections import namedtuple
 
 FILE_NAME = 's1-s6_sorted.csv'
-DELTA_T = 1.0
-LEN_FIXATIONS_THRESHOLD = 10
+DELTA_T = .010
+LEN_FIXATIONS_THRESHOLD = 10 * DELTA_T
 
 SubjectResult = namedtuple("SubjectResult", ['subject', "MFD_true", "MFD_SD_true", "MFD_false", "MFD_SD_false",
                            "MSA_true", "MSA_SD_true", "MSA_false", "MSA_SD_false"])
@@ -54,11 +54,18 @@ class Record(object):
         len_fixations = np.array([])
         for bit, group in itertools.groupby(peaks):
             if not bit:
-                len_fixations = np.append(len_fixations, sum(1 for _ in group) / DELTA_T)
+                len_fixations = np.append(len_fixations, sum(1 for _ in group) * DELTA_T)
         return len_fixations
 
     def get_MSA(self):
-        return np.average(self.velocity[self.peaks])
+        SAs = np.array([])
+        offset = 0
+        for bit, group in itertools.groupby(self.peaks):
+            group_length = sum(1 for _ in group)
+            if bit:
+                SAs = np.append(SAs, np.max(self.velocity[offset:offset + group_length]))
+            offset += group_length
+        return np.average(SAs)
 
     def get_MFD(self):
         return np.average(self.len_fixations[self.len_fixations > LEN_FIXATIONS_THRESHOLD])
@@ -94,7 +101,7 @@ def process_result(res):
     MFD_overall_false = np.array([])
     MSA_overall_true = np.array([])
     MSA_overall_false = np.array([])
-    for subject in res:
+    for subject in sorted(res):
         subject_results.append(SubjectResult(
             subject,
             np.average(res[subject]["true"]["MFD"]),
